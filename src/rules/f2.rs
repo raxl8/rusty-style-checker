@@ -3,7 +3,7 @@ use crate::file::SourceFile;
 pub struct RuleF2;
 
 fn is_snake_case_char(c: char) -> bool {
-    matches!(c, '0'..='9' | 'A'..='Z' | 'a'..='z' | '_')
+    matches!(c, '0'..='9' | 'a'..='z' | '_')
 }
 
 fn has_multiple_chars_in_a_row(string: &str, c: char) -> bool {
