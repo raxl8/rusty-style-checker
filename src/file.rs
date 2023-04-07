@@ -7,9 +7,10 @@ pub struct Location {
 
 impl Location {
     pub fn from_clang(location: clang::source::SourceLocation) -> Self {
-        Location {
-            line: location.get_file_location().line,
-            column: location.get_file_location().column,
+        let file_location = location.get_file_location();
+        Self {
+            line: file_location.line,
+            column: file_location.column,
         }
     }
 }
@@ -22,6 +23,7 @@ pub struct IncludeDirective {
 pub struct Function {
     pub name: String,
     pub is_definition: bool,
+    pub location: Location,
 }
 
 pub struct Variable {
@@ -58,6 +60,7 @@ impl SourceFile {
         let function = Function {
             name: entity.get_name().unwrap_or_default(),
             is_definition: entity.is_definition(),
+            location: Location::from_clang(entity.get_location().unwrap()),
         };
         self.functions.push(function);
     }
