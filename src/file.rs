@@ -1,5 +1,6 @@
 use clang::{EntityKind, EntityVisitResult};
 
+#[derive(Debug)]
 pub struct Location {
     pub line: u32,
     pub column: u32,
@@ -20,9 +21,14 @@ pub struct IncludeDirective {
     pub location: Location,
 }
 
+pub struct Param {
+    name: String,
+}
+
 pub struct Function {
     pub name: String,
     pub is_definition: bool,
+    pub params: Vec<Param>,
     pub location: Location,
 }
 
@@ -57,11 +63,24 @@ impl SourceFile {
     }
 
     fn add_function(&mut self, entity: clang::Entity) {
-        let function = Function {
+        let mut function = Function {
             name: entity.get_name().unwrap_or_default(),
             is_definition: entity.is_definition(),
+            params: vec![],
             location: Location::from_clang(entity.get_location().unwrap()),
         };
+        entity.visit_children(|child, _| {
+            match child.get_kind() {
+                EntityKind::ParmDecl => {
+                    let param = Param {
+                        name: child.get_name().unwrap_or_default(),
+                    };
+                    function.params.push(param);
+                }
+                _ => (),
+            }
+            EntityVisitResult::Continue
+        });
         self.functions.push(function);
     }
 
