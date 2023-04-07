@@ -3,6 +3,9 @@ use crate::file::{Block, SourceFile};
 pub struct RuleC1;
 
 fn process_blocks(source_file: &SourceFile, block: &Block, depth: u32) {
+    if depth > 10 {
+        return;
+    }
     for branch in block.branches.iter() {
         if depth >= 3 {
             println!(
