@@ -7,7 +7,7 @@ impl super::Rule for RuleF4 {
         for func in source_file.functions.iter() {
             match &func.range {
                 Some(range) => {
-                    let line_count = range.end.line - range.start.line + 1;
+                    let line_count: i32 = range.end.line as i32 - range.start.line as i32 + 1;
                     if line_count > 20 {
                         println!(
                             "{}:{}: C-F4 Violation",
