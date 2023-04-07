@@ -28,17 +28,24 @@ pub struct IncludeDirective {
 }
 
 pub struct Param {
-    name: String,
+    pub name: String,
+}
+
+#[derive(Debug)]
+pub struct Branch {
+    pub location: Location,
+    pub children: Vec<Branch>,
 }
 
 pub struct Function {
     pub name: String,
+    pub params: Vec<Param>,
+    pub branches: Vec<Branch>,
+    pub location: Location,
+    pub range: Option<Range>,
     pub is_definition: bool,
     pub is_variadic: bool,
     pub is_type_variadic: bool,
-    pub params: Vec<Param>,
-    pub location: Location,
-    pub range: Option<Range>,
 }
 
 pub struct Variable {
@@ -51,6 +58,27 @@ pub struct SourceFile {
     pub includes: Vec<IncludeDirective>,
     pub global_variables: Vec<Variable>,
     pub functions: Vec<Function>,
+}
+
+fn get_conditional_branching(entity: &clang::Entity) -> Vec<Branch> {
+    let mut branches: Vec<Branch> = vec![];
+    entity.visit_children(|child, _| {
+        match child.get_kind() {
+            EntityKind::IfStmt | EntityKind::ForStmt | EntityKind::WhileStmt => {
+                let branch = Branch {
+                    location: Location::from_clang(child.get_location().unwrap()),
+                    children: get_conditional_branching(&child),
+                };
+                branches.push(branch);
+            }
+            EntityKind::CompoundStmt => {
+                branches = get_conditional_branching(&child);
+            }
+            _ => (),
+        }
+        EntityVisitResult::Continue
+    });
+    branches
 }
 
 impl SourceFile {
@@ -74,12 +102,13 @@ impl SourceFile {
     fn add_function(&mut self, entity: clang::Entity) {
         let mut function = Function {
             name: entity.get_name().unwrap_or_default(),
+            params: vec![],
+            branches: vec![],
+            location: Location::from_clang(entity.get_location().unwrap()),
+            range: None,
             is_definition: entity.is_definition(),
             is_variadic: entity.is_variadic(),
             is_type_variadic: entity.get_type().unwrap().is_variadic(),
-            params: vec![],
-            location: Location::from_clang(entity.get_location().unwrap()),
-            range: None,
         };
         for argument in entity.get_arguments().unwrap() {
             let param = Param {
@@ -90,6 +119,7 @@ impl SourceFile {
         entity.visit_children(|child, _| {
             match child.get_kind() {
                 EntityKind::CompoundStmt => {
+                    function.branches = get_conditional_branching(&child);
                     let file = child
                         .get_location()
                         .unwrap()
