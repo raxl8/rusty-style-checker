@@ -81,14 +81,14 @@ impl SourceFile {
             location: Location::from_clang(entity.get_location().unwrap()),
             range: None,
         };
+        for argument in entity.get_arguments().unwrap() {
+            let param = Param {
+                name: argument.get_name().unwrap_or_default(),
+            };
+            function.params.push(param);
+        }
         entity.visit_children(|child, _| {
             match child.get_kind() {
-                EntityKind::ParmDecl => {
-                    let param = Param {
-                        name: child.get_name().unwrap_or_default(),
-                    };
-                    function.params.push(param);
-                }
                 EntityKind::CompoundStmt => {
                     let file = child
                         .get_location()
