@@ -16,6 +16,12 @@ impl Location {
     }
 }
 
+#[derive(Debug)]
+pub struct Range {
+    pub start: Location,
+    pub end: Location,
+}
+
 pub struct IncludeDirective {
     pub file: String,
     pub location: Location,
@@ -30,6 +36,7 @@ pub struct Function {
     pub is_definition: bool,
     pub params: Vec<Param>,
     pub location: Location,
+    pub range: Option<Range>,
 }
 
 pub struct Variable {
@@ -48,16 +55,16 @@ impl SourceFile {
     pub fn new(path: String) -> Self {
         SourceFile {
             path,
-            includes: Vec::new(),
-            global_variables: Vec::new(),
-            functions: Vec::new(),
+            includes: vec![],
+            global_variables: vec![],
+            functions: vec![],
         }
     }
 
     fn add_include_directive(&mut self, entity: clang::Entity) {
         let include_directive = IncludeDirective {
-            location: Location::from_clang(entity.get_location().unwrap()),
             file: entity.get_name().unwrap_or("".to_string()),
+            location: Location::from_clang(entity.get_location().unwrap()),
         };
         self.includes.push(include_directive);
     }
@@ -68,6 +75,7 @@ impl SourceFile {
             is_definition: entity.is_definition(),
             params: vec![],
             location: Location::from_clang(entity.get_location().unwrap()),
+            range: None,
         };
         entity.visit_children(|child, _| {
             match child.get_kind() {
@@ -76,6 +84,25 @@ impl SourceFile {
                         name: child.get_name().unwrap_or_default(),
                     };
                     function.params.push(param);
+                }
+                EntityKind::CompoundStmt => {
+                    let file = child
+                        .get_location()
+                        .unwrap()
+                        .get_file_location()
+                        .file
+                        .unwrap();
+                    let source_range = child.get_range().unwrap();
+                    let start_location = file.get_offset_location(
+                        source_range.get_start().get_file_location().offset + 2,
+                    );
+                    let end_location = file
+                        .get_offset_location(source_range.get_end().get_file_location().offset - 2);
+                    let range = Range {
+                        start: Location::from_clang(start_location),
+                        end: Location::from_clang(end_location),
+                    };
+                    function.range = Some(range);
                 }
                 _ => (),
             }
