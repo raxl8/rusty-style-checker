@@ -34,6 +34,8 @@ pub struct Param {
 pub struct Function {
     pub name: String,
     pub is_definition: bool,
+    pub is_variadic: bool,
+    pub is_type_variadic: bool,
     pub params: Vec<Param>,
     pub location: Location,
     pub range: Option<Range>,
@@ -73,6 +75,8 @@ impl SourceFile {
         let mut function = Function {
             name: entity.get_name().unwrap_or_default(),
             is_definition: entity.is_definition(),
+            is_variadic: entity.is_variadic(),
+            is_type_variadic: entity.get_type().unwrap().is_variadic(),
             params: vec![],
             location: Location::from_clang(entity.get_location().unwrap()),
             range: None,
