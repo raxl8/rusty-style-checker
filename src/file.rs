@@ -31,16 +31,22 @@ pub struct Param {
     pub name: String,
 }
 
+#[derive(Debug, Default)]
+pub struct Block {
+    pub branches: Vec<Branch>,
+    pub gotos: Vec<Location>,
+}
+
 #[derive(Debug)]
 pub struct Branch {
     pub location: Location,
-    pub children: Vec<Branch>,
+    pub child: Block,
 }
 
 pub struct Function {
     pub name: String,
     pub params: Vec<Param>,
-    pub branches: Vec<Branch>,
+    pub block: Block,
     pub location: Location,
     pub range: Option<Range>,
     pub is_definition: bool,
@@ -60,25 +66,31 @@ pub struct SourceFile {
     pub functions: Vec<Function>,
 }
 
-fn get_conditional_branching(entity: &clang::Entity) -> Vec<Branch> {
-    let mut branches: Vec<Branch> = vec![];
+fn build_block(entity: &clang::Entity) -> Block {
+    let mut block: Block = Default::default();
     entity.visit_children(|child, _| {
+        println!("{:?}", child.get_kind());
         match child.get_kind() {
             EntityKind::IfStmt | EntityKind::ForStmt | EntityKind::WhileStmt => {
                 let branch = Branch {
                     location: Location::from_clang(child.get_location().unwrap()),
-                    children: get_conditional_branching(&child),
+                    child: build_block(&child),
                 };
-                branches.push(branch);
+                block.branches.push(branch);
             }
             EntityKind::CompoundStmt => {
-                branches = get_conditional_branching(&child);
+                block = build_block(&child);
+            }
+            EntityKind::GotoStmt => {
+                block
+                    .gotos
+                    .push(Location::from_clang(child.get_location().unwrap()));
             }
             _ => (),
         }
         EntityVisitResult::Continue
     });
-    branches
+    block
 }
 
 impl SourceFile {
@@ -103,7 +115,7 @@ impl SourceFile {
         let mut function = Function {
             name: entity.get_name().unwrap_or_default(),
             params: vec![],
-            branches: vec![],
+            block: Default::default(),
             location: Location::from_clang(entity.get_location().unwrap()),
             range: None,
             is_definition: entity.is_definition(),
@@ -119,7 +131,7 @@ impl SourceFile {
         entity.visit_children(|child, _| {
             match child.get_kind() {
                 EntityKind::CompoundStmt => {
-                    function.branches = get_conditional_branching(&child);
+                    function.block = build_block(&child);
                     let file = child
                         .get_location()
                         .unwrap()

@@ -1,4 +1,5 @@
 use self::c1::RuleC1;
+use self::c3::RuleC3;
 use self::f2::RuleF2;
 use self::f4::RuleF4;
 use self::f5::RuleF5;
@@ -10,6 +11,7 @@ use self::o3::RuleO3;
 use crate::file::SourceFile;
 
 pub mod c1;
+pub mod c3;
 pub mod f2;
 pub mod f4;
 pub mod f5;
@@ -32,6 +34,7 @@ impl RuleExecutor {
         RuleExecutor {
             rules: vec![
                 Box::new(RuleC1),
+                Box::new(RuleC3),
                 Box::new(RuleF2),
                 Box::new(RuleF4),
                 Box::new(RuleF5),
