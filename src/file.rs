@@ -67,9 +67,8 @@ pub struct SourceFile {
 }
 
 fn build_block(entity: &clang::Entity) -> Block {
-    let mut block: Block = Default::default();
+    let mut block: Block = Block::default();
     entity.visit_children(|child, _| {
-        println!("{:?}", child.get_kind());
         match child.get_kind() {
             EntityKind::IfStmt | EntityKind::ForStmt | EntityKind::WhileStmt => {
                 let branch = Branch {
@@ -115,7 +114,7 @@ impl SourceFile {
         let mut function = Function {
             name: entity.get_name().unwrap_or_default(),
             params: vec![],
-            block: Default::default(),
+            block: Block::default(),
             location: Location::from_clang(entity.get_location().unwrap()),
             range: None,
             is_definition: entity.is_definition(),
@@ -129,28 +128,25 @@ impl SourceFile {
             function.params.push(param);
         }
         entity.visit_children(|child, _| {
-            match child.get_kind() {
-                EntityKind::CompoundStmt => {
-                    function.block = build_block(&child);
-                    let file = child
-                        .get_location()
-                        .unwrap()
-                        .get_file_location()
-                        .file
-                        .unwrap();
-                    let source_range = child.get_range().unwrap();
-                    let start_location = file.get_offset_location(
-                        source_range.get_start().get_file_location().offset + 2,
+            if child.get_kind() == EntityKind::CompoundStmt {
+                function.block = build_block(&child);
+                let file = child
+                    .get_location()
+                    .unwrap()
+                    .get_file_location()
+                    .file
+                    .unwrap();
+                let source_range = child.get_range().unwrap();
+                let start_location = file.get_offset_location(
+                    source_range.get_start().get_file_location().offset + 2,
                     );
-                    let end_location = file
-                        .get_offset_location(source_range.get_end().get_file_location().offset - 2);
-                    let range = Range {
-                        start: Location::from_clang(start_location),
-                        end: Location::from_clang(end_location),
-                    };
-                    function.range = Some(range);
-                }
-                _ => (),
+                let end_location = file
+                    .get_offset_location(source_range.get_end().get_file_location().offset - 2);
+                let range = Range {
+                    start: Location::from_clang(start_location),
+                    end: Location::from_clang(end_location),
+                };
+                function.range = Some(range);
             }
             EntityVisitResult::Continue
         });

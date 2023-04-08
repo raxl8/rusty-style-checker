@@ -20,7 +20,7 @@ fn process_blocks(source_file: &SourceFile, block: &Block, depth: u32) {
 impl super::Rule for RuleC1 {
     fn analyze(&self, source_file: &SourceFile) {
         for func in source_file.functions.iter() {
-            process_blocks(&source_file, &func.block, 1);
+            process_blocks(source_file, &func.block, 1);
         }
     }
 }

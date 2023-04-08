@@ -24,14 +24,11 @@ fn main() {
         .filter(|e| !e.file_type().is_dir());
     for entry in entries {
         let path = entry.clone().into_path();
-        match path.extension() {
-            Some(extension) => {
-                if extension == "c" {
-                    let path = entry.file_name().to_str().unwrap();
-                    process_file(&rule_executor, path, &index);
-                }
+        if let Some(extension) = path.extension() {
+            if extension == "c" {
+                let path = entry.file_name().to_str().unwrap();
+                process_file(&rule_executor, path, &index);
             }
-            _ => (),
         }
     }
 }

@@ -53,3 +53,9 @@ impl RuleExecutor {
         }
     }
 }
+
+impl Default for RuleExecutor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
