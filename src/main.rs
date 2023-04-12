@@ -1,5 +1,6 @@
-pub mod file;
-pub mod rules;
+mod file;
+mod rules;
+
 use file::SourceFile;
 use rules::RuleExecutor;
 use walkdir::WalkDir;

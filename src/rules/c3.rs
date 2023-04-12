@@ -1,4 +1,6 @@
-use crate::file::{Block, SourceFile};
+use clang::token::TokenKind;
+
+use crate::file::{block::Block, SourceFile};
 
 pub struct RuleC3;
 
@@ -6,11 +8,16 @@ fn process_blocks(source_file: &SourceFile, block: &Block, depth: u32) {
     if depth > 10 {
         return;
     }
-    for goto in block.gotos.iter() {
-        println!("{}:{}: C-C3 Violation", source_file.path, goto.line);
+    for token in block.tokens.iter() {
+        if token.kind == TokenKind::Keyword && token.spelling == "goto" {
+            println!(
+                "{}:{}: C-C3 Violation",
+                source_file.path, token.location.line
+            );
+        }
     }
-    for branch in block.branches.iter() {
-        process_blocks(source_file, &branch.child, depth + 1);
+    for child in block.children.iter() {
+        process_blocks(source_file, &child, depth + 1);
     }
 }
 

@@ -11,7 +11,7 @@ impl super::Rule for RuleF4 {
                     println!(
                         "{}:{}: C-F4 Violation",
                         source_file.path, func.location.line
-                        );
+                    );
                 }
             }
         }

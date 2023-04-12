@@ -1,13 +1,17 @@
-use clang::{EntityKind, EntityVisitResult};
+use clang::{source::SourceLocation, EntityKind, EntityVisitResult};
 
-#[derive(Debug)]
+use self::block::{Block, Token};
+
+pub mod block;
+
+#[derive(Debug, Default, Clone)]
 pub struct Location {
     pub line: u32,
     pub column: u32,
 }
 
 impl Location {
-    pub fn from_clang(location: clang::source::SourceLocation) -> Self {
+    pub fn from_clang(location: SourceLocation) -> Self {
         let file_location = location.get_file_location();
         Self {
             line: file_location.line,
@@ -31,21 +35,10 @@ pub struct Param {
     pub name: String,
 }
 
-#[derive(Debug, Default)]
-pub struct Block {
-    pub branches: Vec<Branch>,
-    pub gotos: Vec<Location>,
-}
-
-#[derive(Debug)]
-pub struct Branch {
-    pub location: Location,
-    pub child: Block,
-}
-
 pub struct Function {
     pub name: String,
     pub params: Vec<Param>,
+    pub tokens: Vec<Token>,
     pub block: Block,
     pub location: Location,
     pub range: Option<Range>,
@@ -66,32 +59,6 @@ pub struct SourceFile {
     pub functions: Vec<Function>,
 }
 
-fn build_block(entity: &clang::Entity) -> Block {
-    let mut block: Block = Block::default();
-    entity.visit_children(|child, _| {
-        match child.get_kind() {
-            EntityKind::IfStmt | EntityKind::ForStmt | EntityKind::WhileStmt => {
-                let branch = Branch {
-                    location: Location::from_clang(child.get_location().unwrap()),
-                    child: build_block(&child),
-                };
-                block.branches.push(branch);
-            }
-            EntityKind::CompoundStmt => {
-                block = build_block(&child);
-            }
-            EntityKind::GotoStmt => {
-                block
-                    .gotos
-                    .push(Location::from_clang(child.get_location().unwrap()));
-            }
-            _ => (),
-        }
-        EntityVisitResult::Continue
-    });
-    block
-}
-
 impl SourceFile {
     pub fn new(path: String) -> Self {
         SourceFile {
@@ -104,7 +71,7 @@ impl SourceFile {
 
     fn add_include_directive(&mut self, entity: clang::Entity) {
         let include_directive = IncludeDirective {
-            file: entity.get_name().unwrap_or("".to_string()),
+            file: entity.get_name().unwrap_or_default(),
             location: Location::from_clang(entity.get_location().unwrap()),
         };
         self.includes.push(include_directive);
@@ -114,6 +81,7 @@ impl SourceFile {
         let mut function = Function {
             name: entity.get_name().unwrap_or_default(),
             params: vec![],
+            tokens: vec![],
             block: Block::default(),
             location: Location::from_clang(entity.get_location().unwrap()),
             range: None,
@@ -127,9 +95,14 @@ impl SourceFile {
             };
             function.params.push(param);
         }
+        if let Some(range) = entity.get_range() {
+            for token in range.tokenize() {
+                let token = Token::from_clang(token);
+                function.tokens.push(token);
+            }
+        }
         entity.visit_children(|child, _| {
             if child.get_kind() == EntityKind::CompoundStmt {
-                function.block = build_block(&child);
                 let file = child
                     .get_location()
                     .unwrap()
@@ -137,11 +110,10 @@ impl SourceFile {
                     .file
                     .unwrap();
                 let source_range = child.get_range().unwrap();
-                let start_location = file.get_offset_location(
-                    source_range.get_start().get_file_location().offset + 2,
-                    );
-                let end_location = file
-                    .get_offset_location(source_range.get_end().get_file_location().offset - 2);
+                let start_location = file
+                    .get_offset_location(source_range.get_start().get_file_location().offset + 2);
+                let end_location =
+                    file.get_offset_location(source_range.get_end().get_file_location().offset - 2);
                 let range = Range {
                     start: Location::from_clang(start_location),
                     end: Location::from_clang(end_location),
@@ -150,6 +122,9 @@ impl SourceFile {
             }
             EntityVisitResult::Continue
         });
+        let mut tokens = function.tokens.iter();
+        let initial_token = tokens.next().unwrap();
+        function.block = Block::from_tokens(&mut tokens, initial_token.clone());
         self.functions.push(function);
     }
 
