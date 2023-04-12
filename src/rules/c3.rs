@@ -24,7 +24,9 @@ fn process_blocks(source_file: &SourceFile, block: &Block, depth: u32) {
 impl super::Rule for RuleC3 {
     fn analyze(&self, source_file: &SourceFile) {
         for func in source_file.functions.iter() {
-            process_blocks(source_file, &func.block, 1);
+            if let Some(block) = func.block.as_ref() {
+                process_blocks(source_file, block, 0);
+            }
         }
     }
 }

@@ -15,23 +15,23 @@ fn process_blocks(source_file: &SourceFile, block: &Block, depth: u32) {
     }
     let mut inline_depth = 0;
     for child in block.children.iter() {
-        if let Some(initial_token) = &child.initial_token {
-            match initial_token.spelling.as_str() {
-                "if" | "for" | "while" => {
-                    inline_depth = 1;
-                }
-                "else if" => inline_depth += 1,
-                _ => (),
+        match child.initial_token.spelling.as_str() {
+            "if" | "for" | "while" => {
+                inline_depth = 1;
             }
-            process_blocks(source_file, &child, depth + inline_depth);
+            "else if" => inline_depth += 1,
+            _ => (),
         }
+        process_blocks(source_file, child, depth + inline_depth);
     }
 }
 
 impl super::Rule for RuleC1 {
     fn analyze(&self, source_file: &SourceFile) {
         for func in source_file.functions.iter() {
-            process_blocks(source_file, &func.block, 0);
+            if let Some(block) = func.block.as_ref() {
+                process_blocks(source_file, block, 0);
+            }
         }
     }
 }

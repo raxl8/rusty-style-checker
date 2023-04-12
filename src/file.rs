@@ -39,7 +39,7 @@ pub struct Function {
     pub name: String,
     pub params: Vec<Param>,
     pub tokens: Vec<Token>,
-    pub block: Block,
+    pub block: Option<Block>,
     pub location: Location,
     pub range: Option<Range>,
     pub is_definition: bool,
@@ -82,7 +82,7 @@ impl SourceFile {
             name: entity.get_name().unwrap_or_default(),
             params: vec![],
             tokens: vec![],
-            block: Block::default(),
+            block: None,
             location: Location::from_clang(entity.get_location().unwrap()),
             range: None,
             is_definition: entity.is_definition(),
@@ -124,7 +124,7 @@ impl SourceFile {
         });
         let mut tokens = function.tokens.iter();
         let initial_token = tokens.next().unwrap();
-        function.block = Block::from_tokens(&mut tokens, initial_token.clone());
+        function.block = Some(Block::from_tokens(&mut tokens, initial_token.clone()));
         self.functions.push(function);
     }
 

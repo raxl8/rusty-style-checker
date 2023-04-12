@@ -24,25 +24,12 @@ impl Token {
 
 #[derive(Debug)]
 pub struct Block {
-    pub initial_token: Option<Token>,
+    pub initial_token: Token,
     pub expression_range: Option<Range>,
     pub location: Option<Location>,
     pub is_oneliner: bool,
     pub tokens: Vec<Token>,
     pub children: Vec<Block>,
-}
-
-impl Default for Block {
-    fn default() -> Self {
-        Self {
-            initial_token: None,
-            expression_range: None,
-            location: None,
-            is_oneliner: true,
-            tokens: vec![],
-            children: vec![],
-        }
-    }
 }
 
 impl Block {
@@ -64,7 +51,7 @@ impl Block {
                 *expression_depth -= 1;
                 if *expression_depth == 0 {
                     self.expression_range = Some(Range {
-                        start: self.initial_token.clone().unwrap().location.clone(),
+                        start: self.initial_token.location.clone(),
                         end: token.location.clone(),
                     });
                     let next = tokens.next();
@@ -123,8 +110,14 @@ impl Block {
     }
 
     pub fn from_tokens(tokens: &mut Iter<Token>, initial_token: Token) -> Self {
-        let mut block = Self::default();
-        block.initial_token = Some(initial_token);
+        let mut block = Block {
+            initial_token,
+            expression_range: None,
+            location: None,
+            is_oneliner: true,
+            tokens: vec![],
+            children: vec![],
+        };
         let mut expression_depth = 0;
         let mut depth = 0;
         while let Some(token) = tokens.next() {
