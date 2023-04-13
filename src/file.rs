@@ -54,6 +54,7 @@ pub struct Variable {
 
 pub struct SourceFile {
     pub path: String,
+    pub contents: Vec<String>,
     pub include_guarded: bool,
     pub includes: Vec<IncludeDirective>,
     pub global_variables: Vec<Variable>,
@@ -64,6 +65,7 @@ impl SourceFile {
     pub fn new(path: String) -> Self {
         SourceFile {
             path,
+            contents: vec![],
             include_guarded: false,
             includes: vec![],
             global_variables: vec![],
@@ -150,6 +152,9 @@ impl SourceFile {
         let root = unit.get_entity();
         if let Some(file) = unit.get_file(path) {
             instance.include_guarded = file.is_include_guarded();
+            if let Some(contents) = file.get_contents() {
+                instance.contents = contents.split('\n').map(|s| s.to_string()).collect();
+            }
         }
         root.visit_children(|child, _| {
             if !child.is_in_main_file() {
