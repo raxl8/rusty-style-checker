@@ -26,7 +26,7 @@ fn main() {
     for entry in entries {
         let path = entry.clone().into_path();
         if let Some(extension) = path.extension() {
-            if extension == "c" {
+            if extension == "c" || extension == "h" {
                 let path = entry.file_name().to_str().unwrap();
                 process_file(&rule_executor, path, &index);
             }

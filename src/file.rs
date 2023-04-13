@@ -54,6 +54,7 @@ pub struct Variable {
 
 pub struct SourceFile {
     pub path: String,
+    pub include_guarded: bool,
     pub includes: Vec<IncludeDirective>,
     pub global_variables: Vec<Variable>,
     pub functions: Vec<Function>,
@@ -63,6 +64,7 @@ impl SourceFile {
     pub fn new(path: String) -> Self {
         SourceFile {
             path,
+            include_guarded: false,
             includes: vec![],
             global_variables: vec![],
             functions: vec![],
@@ -144,8 +146,11 @@ impl SourceFile {
     }
 
     pub fn from_clang(path: String, unit: clang::TranslationUnit) -> Self {
-        let mut instance = Self::new(path);
+        let mut instance = Self::new(path.clone());
         let root = unit.get_entity();
+        if let Some(file) = unit.get_file(path) {
+            instance.include_guarded = file.is_include_guarded();
+        }
         root.visit_children(|child, _| {
             if !child.is_in_main_file() {
                 return EntityVisitResult::Continue;

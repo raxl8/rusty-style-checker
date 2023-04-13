@@ -7,6 +7,7 @@ use self::f6::RuleF6;
 use self::g3::RuleG3;
 use self::g4::RuleG4;
 use self::g5::RuleG5;
+use self::h2::RuleH2;
 use self::l2::RuleL2;
 use self::o3::RuleO3;
 use crate::file::SourceFile;
@@ -20,6 +21,7 @@ pub mod f6;
 pub mod g3;
 pub mod g4;
 pub mod g5;
+pub mod h2;
 pub mod l2;
 pub mod o3;
 
@@ -44,6 +46,7 @@ impl RuleExecutor {
                 Box::new(RuleG3),
                 Box::new(RuleG4),
                 Box::new(RuleG5),
+                Box::new(RuleH2),
                 Box::new(RuleL2),
                 Box::new(RuleO3),
             ],
