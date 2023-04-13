@@ -124,7 +124,11 @@ impl SourceFile {
         });
         let mut tokens = function.tokens.iter();
         let initial_token = tokens.next().unwrap();
-        function.block = Some(Block::from_tokens(&mut tokens, initial_token.clone()));
+        function.block = Some(Block::from_tokens(
+            &mut tokens,
+            block::BlockType::Function,
+            initial_token.clone(),
+        ));
         self.functions.push(function);
     }
 

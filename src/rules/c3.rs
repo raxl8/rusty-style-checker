@@ -8,6 +8,7 @@ fn process_blocks(source_file: &SourceFile, block: &Block, depth: u32) {
     if depth > 10 {
         return;
     }
+
     for token in block.tokens.iter() {
         if token.kind == TokenKind::Keyword && token.spelling == "goto" {
             println!(
@@ -17,7 +18,7 @@ fn process_blocks(source_file: &SourceFile, block: &Block, depth: u32) {
         }
     }
     for child in block.children.iter() {
-        process_blocks(source_file, &child, depth + 1);
+        process_blocks(source_file, child, depth + 1);
     }
 }
 

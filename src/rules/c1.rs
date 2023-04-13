@@ -1,4 +1,7 @@
-use crate::file::{block::Block, SourceFile};
+use crate::file::{
+    block::{Block, BlockType},
+    SourceFile,
+};
 
 pub struct RuleC1;
 
@@ -9,17 +12,16 @@ fn process_blocks(source_file: &SourceFile, block: &Block, depth: u32) {
     if depth >= 3 {
         println!(
             "{}:{} C-C1 Violation",
-            source_file.path,
-            block.location.as_ref().unwrap().line
+            source_file.path, block.location.line
         );
     }
     let mut inline_depth = 0;
     for child in block.children.iter() {
-        match child.initial_token.spelling.as_str() {
-            "if" | "for" | "while" => {
+        match child.init_type {
+            BlockType::If | BlockType::For | BlockType::While => {
                 inline_depth = 1;
             }
-            "else if" => inline_depth += 1,
+            BlockType::ElseIf => inline_depth += 1,
             _ => (),
         }
         process_blocks(source_file, child, depth + inline_depth);
