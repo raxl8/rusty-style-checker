@@ -8,7 +8,7 @@ impl super::Rule for RuleF6 {
             if !func.is_variadic && func.is_type_variadic {
                 println!(
                     "{}:{}: C-F6 Violation",
-                    source_file.path, func.location.line
+                    source_file.path.display(), func.location.line
                 );
             }
         }

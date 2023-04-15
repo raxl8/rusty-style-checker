@@ -9,7 +9,7 @@ impl super::Rule for RuleF5 {
             if param_count > 4 {
                 println!(
                     "{}:{}: C-F5 Violation",
-                    source_file.path, func.location.line
+                    source_file.path.display(), func.location.line
                 );
             }
         }

@@ -10,7 +10,7 @@ impl super::Rule for RuleO3 {
             .filter(|func| func.is_definition)
             .count();
         if count > 5 {
-            println!("{}: C-O3 Violation", source_file.path);
+            println!("{}: C-O3 Violation", source_file.path.display());
         }
     }
 }

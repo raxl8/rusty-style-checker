@@ -12,7 +12,7 @@ fn process_blocks(source_file: &SourceFile, block: &Block, depth: u32) {
     if depth >= 3 {
         println!(
             "{}:{} C-C1 Violation",
-            source_file.path, block.location.line
+            source_file.path.display(), block.location.line
         );
     }
     let mut inline_depth = 0;

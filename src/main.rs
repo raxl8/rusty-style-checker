@@ -1,18 +1,23 @@
 mod file;
 mod rules;
+mod naming;
+
+use std::path::PathBuf;
 
 use file::SourceFile;
 use rules::RuleExecutor;
 use walkdir::WalkDir;
 
-fn process_file(rule_executor: &RuleExecutor, path: &str, index: &clang::Index) {
+fn process_file(rule_executor: &RuleExecutor, path: PathBuf, index: &clang::Index) {
+    let path_str = path.to_str().unwrap();
     let tu = index
-        .parser(path)
+        .parser(path_str)
         .detailed_preprocessing_record(true)
-        .parse()
-        .unwrap();
-    let source_file = SourceFile::from_clang(path.to_string(), tu);
-    rule_executor.run(&source_file);
+        .parse();
+    if let Ok(tu) = tu {
+        let source_file = SourceFile::from_clang(path, tu);
+        rule_executor.run(&source_file);
+    }
 }
 
 fn main() {
@@ -27,8 +32,8 @@ fn main() {
         let path = entry.clone().into_path();
         if let Some(extension) = path.extension() {
             if extension == "c" || extension == "h" {
-                let path = entry.file_name().to_str().unwrap();
-                process_file(&rule_executor, path, &index);
+                let path = entry.path();
+                process_file(&rule_executor, path.to_path_buf(), &index);
             }
         }
     }

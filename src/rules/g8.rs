@@ -23,7 +23,7 @@ impl super::Rule for RuleG8 {
         empty_lines.pop(); // Remove the last empty line as it falls under C-A3
         for i in 0..empty_lines.len() {
             let line_number: usize = source_file.contents.len() - empty_lines.len() + i;
-            println!("{}:{}: C-G8 Violation", source_file.path, line_number);
+            println!("{}:{}: C-G8 Violation", source_file.path.display(), line_number);
         }
     }
 }

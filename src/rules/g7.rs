@@ -7,7 +7,7 @@ impl super::Rule for RuleG7 {
         for (i, line) in source_file.contents.iter().enumerate() {
             match line.chars().last() {
                 Some(c) if c == ' ' || c == '\t' => {
-                    println!("{}:{}: C-G7 Violation", source_file.path, i + 1)
+                    println!("{}:{}: C-G7 Violation", source_file.path.display(), i + 1)
                 }
                 _ => (),
             }

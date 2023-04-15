@@ -8,7 +8,7 @@ impl super::Rule for RuleG5 {
             if !include.file.ends_with(".h") {
                 println!(
                     "{}:{}: C-G5 Violation",
-                    source_file.path, include.location.line
+                    source_file.path.display(), include.location.line
                 );
             }
         }

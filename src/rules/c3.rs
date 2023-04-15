@@ -13,7 +13,7 @@ fn process_blocks(source_file: &SourceFile, block: &Block, depth: u32) {
         if token.kind == TokenKind::Keyword && token.spelling == "goto" {
             println!(
                 "{}:{}: C-C3 Violation",
-                source_file.path, token.location.line
+                source_file.path.display(), token.location.line
             );
         }
     }
