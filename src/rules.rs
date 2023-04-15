@@ -17,6 +17,7 @@ use self::g8::RuleG8;
 use self::h2::RuleH2;
 use self::l2::RuleL2;
 use self::o3::RuleO3;
+use self::o4::RuleO4;
 use crate::file::SourceFile;
 
 pub mod a3;
@@ -38,6 +39,7 @@ pub mod g8;
 pub mod h2;
 pub mod l2;
 pub mod o3;
+pub mod o4;
 
 pub trait Rule {
     fn analyze(&self, source_file: &SourceFile);
@@ -70,6 +72,7 @@ impl RuleExecutor {
                 Box::new(RuleH2),
                 Box::new(RuleL2),
                 Box::new(RuleO3),
+                Box::new(RuleO4),
             ],
         }
     }
