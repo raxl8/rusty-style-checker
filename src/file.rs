@@ -20,7 +20,7 @@ impl Location {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Range {
     pub start: Location,
     pub end: Location,
@@ -31,17 +31,20 @@ pub struct IncludeDirective {
     pub location: Location,
 }
 
+#[derive(Clone)]
 pub struct Param {
     pub name: String,
 }
 
+#[derive(Clone)]
 pub struct Function {
     pub name: String,
     pub params: Vec<Param>,
     pub tokens: Vec<Token>,
     pub block: Option<Block>,
     pub location: Location,
-    pub range: Option<Range>,
+    pub body: Option<Range>,
+    pub range: Range,
     pub is_definition: bool,
     pub is_variadic: bool,
     pub is_type_variadic: bool,
@@ -82,13 +85,18 @@ impl SourceFile {
     }
 
     fn add_function(&mut self, entity: clang::Entity) {
+        let range = entity.get_range().unwrap();
         let mut function = Function {
             name: entity.get_name().unwrap_or_default(),
             params: vec![],
             tokens: vec![],
             block: None,
             location: Location::from_clang(entity.get_location().unwrap()),
-            range: None,
+            range: Range {
+                start: Location::from_clang(range.get_start()),
+                end: Location::from_clang(range.get_end()),
+            },
+            body: None,
             is_definition: entity.is_definition(),
             is_variadic: entity.is_variadic(),
             is_type_variadic: entity.get_type().unwrap().is_variadic(),
@@ -122,7 +130,7 @@ impl SourceFile {
                     start: Location::from_clang(start_location),
                     end: Location::from_clang(end_location),
                 };
-                function.range = Some(range);
+                function.body = Some(range);
             }
             EntityVisitResult::Continue
         });
