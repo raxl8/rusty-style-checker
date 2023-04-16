@@ -71,7 +71,7 @@ fn process_blocks(source_file: &SourceFile, reporter: &mut Reporter, block: &Blo
             reporter.report(
                 source_file.path.clone(),
                 Some(token.location.line),
-                "L-L2 Violation",
+                "C-L2 Violation",
             );
         }
         if is_case {
@@ -89,14 +89,14 @@ fn process_blocks(source_file: &SourceFile, reporter: &mut Reporter, block: &Blo
                         reporter.report(
                             source_file.path.clone(),
                             Some(next.range.start.line),
-                            "L-L2 Violation",
+                            "C-L2 Violation",
                         );
                     }
                     if !next.is_oneliner && !verify_indent(source_file, &next.range.end, depth) {
                         reporter.report(
                             source_file.path.clone(),
                             Some(next.range.end.line),
-                            "L-L2 Violation",
+                            "C-L2 Violation",
                         );
                     }
                     process_blocks(source_file, reporter, &next, depth + 1);
@@ -109,14 +109,14 @@ fn process_blocks(source_file: &SourceFile, reporter: &mut Reporter, block: &Blo
             reporter.report(
                 source_file.path.clone(),
                 Some(current.range.start.line),
-                "L-L2 Violation",
+                "C-L2 Violation",
             );
         }
         if !current.is_oneliner && !verify_indent(source_file, &current.range.end, depth) {
             reporter.report(
                 source_file.path.clone(),
                 Some(current.range.end.line),
-                "L-L2 Violation",
+                "C-L2 Violation",
             );
         }
         process_blocks(source_file, reporter, &current, depth + 1);
