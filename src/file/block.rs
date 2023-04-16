@@ -1,4 +1,4 @@
-use std::slice::Iter;
+use std::{iter::Peekable, slice::Iter};
 
 use clang::token::TokenKind;
 
@@ -29,8 +29,9 @@ pub enum BlockType {
     ElseIf,
     For,
     While,
+    DoWhile,
     Switch,
-    Function,
+    Unnamed,
 }
 
 impl BlockType {
@@ -40,8 +41,9 @@ impl BlockType {
             "else" => Self::Else,
             "for" => Self::For,
             "while" => Self::While,
+            "do" => Self::DoWhile,
             "switch" => Self::Switch,
-            _ => Self::Function,
+            _ => Self::Unnamed,
         }
     }
 }
@@ -59,28 +61,52 @@ pub struct Block {
 }
 
 impl Block {
+    fn find_expression_range(
+        initial_token: Token,
+        tokens: &mut Peekable<Iter<Token>>,
+    ) -> Option<Range> {
+        let mut expression_range: Option<Range> = None;
+        let mut depth = 0;
+        for next in tokens.by_ref() {
+            match next.spelling.as_str() {
+                "(" => depth += 1,
+                ")" => depth -= 1,
+                _ => (),
+            }
+            if depth == 0 {
+                expression_range = Some(Range {
+                    start: initial_token.location,
+                    end: next.location.clone(),
+                });
+                break;
+            }
+        }
+        expression_range
+    }
+
     fn try_find_location(
         self: &mut Self,
         token: Token,
-        tokens: &mut Iter<Token>,
-        depth: &mut u32,
+        tokens: &mut Peekable<Iter<Token>>,
     ) -> Result<(), ()> {
+        if token.kind == TokenKind::Punctuation && token.spelling == "{" {
+            self.start = Some(token.location.clone());
+            self.is_oneliner = false;
+            return Ok(());
+        }
         match self.init_type {
             BlockType::If
             | BlockType::ElseIf
             | BlockType::For
             | BlockType::While
-            | BlockType::Switch => {
-                let next = tokens.next();
-                match next {
-                    Some(next) => {
-                        if next.spelling != "(" {
-                            return Err(());
-                        }
+            | BlockType::Switch => match tokens.peek() {
+                Some(next) => {
+                    if next.spelling != "(" {
+                        return Err(());
                     }
-                    None => return Err(()),
                 }
-            }
+                None => return Err(()),
+            },
             _ => (),
         }
         match self.init_type {
@@ -89,40 +115,24 @@ impl Block {
             | BlockType::For
             | BlockType::While
             | BlockType::Switch => {
-                let mut depth = 1;
-                for next in tokens.by_ref() {
-                    match next.spelling.as_str() {
-                        "(" => depth += 1,
-                        ")" => depth -= 1,
-                        _ => (),
-                    }
-                    if depth == 0 {
-                        self.expression_range = Some(Range {
-                            start: token.location,
-                            end: next.location.clone(),
-                        });
+                self.expression_range = Self::find_expression_range(token, tokens);
+            }
+            BlockType::Unnamed => {
+                while let Some(next) = tokens.peek() {
+                    if next.spelling == "{" {
                         break;
                     }
-                }
-            }
-            BlockType::Function => {
-                while let Some(_) = tokens.next() {
-                    if let Some(next) = tokens.clone().next() {
-                        if next.spelling == "{" {
-                            break;
-                        }
-                    }
+                    tokens.next();
                 }
             }
             _ => (),
         }
-        if let Some(next) = tokens.clone().next() {
+        if let Some(next) = tokens.peek() {
             if next.spelling == "{" {
-                tokens.next();
                 self.start = Some(next.location.clone());
                 self.is_oneliner = false;
-                *depth += 1;
-            } else if self.init_type != BlockType::Function {
+                tokens.next();
+            } else if self.init_type != BlockType::Unnamed {
                 self.start = Some(next.location.clone());
             } else {
                 return Err(());
@@ -131,25 +141,29 @@ impl Block {
         Ok(())
     }
 
-    fn try_find_new_block(self: &mut Self, token: &Token, tokens: &mut Iter<Token>) {
+    fn try_find_new_block(self: &mut Self, token: &Token, tokens: &mut Peekable<Iter<Token>>) {
         let spelling = token.spelling.as_str();
         match token.kind {
             TokenKind::Keyword => match spelling {
                 "else" => {
-                    if let Some(next) = tokens.clone().next() {
+                    if let Some(next) = tokens.peek() {
                         if next.spelling == "if" {
                             tokens.next();
-                            let new_block =
-                                Block::from_tokens(tokens, BlockType::ElseIf, token.clone());
-                            self.children.push(new_block);
+                            self.children.push(Block::from_tokens(
+                                tokens,
+                                BlockType::ElseIf,
+                                token.clone(),
+                            ));
                         } else {
-                            let new_block =
-                                Block::from_tokens(tokens, BlockType::Else, token.clone());
-                            self.children.push(new_block);
+                            self.children.push(Block::from_tokens(
+                                tokens,
+                                BlockType::Else,
+                                token.clone(),
+                            ));
                         }
                     }
                 }
-                "if" | "while" | "for" | "switch" => {
+                "if" | "while" | "for" | "do" | "switch" => {
                     let new_block = Block::from_tokens(
                         tokens,
                         BlockType::from_token(token.spelling.as_str()),
@@ -164,7 +178,7 @@ impl Block {
     }
 
     pub fn from_tokens(
-        tokens: &mut Iter<Token>,
+        tokens: &mut Peekable<Iter<Token>>,
         init_type: BlockType,
         initial_token: Token,
     ) -> Self {
@@ -181,22 +195,37 @@ impl Block {
             tokens: vec![],
             children: vec![],
         };
-        let mut depth = 0;
-        block.try_find_location(initial_token, tokens, &mut depth);
+        block.try_find_location(initial_token, tokens);
         while let Some(token) = tokens.next() {
             if token.kind == TokenKind::Punctuation {
-                if token.spelling == "{" {
-                    depth += 1;
-                } else if token.spelling == "}" {
-                    depth -= 1;
-                    if depth == 0 {
+                match token.spelling.as_str() {
+                    "{" => {
+                        block.children.push(Block::from_tokens(
+                            tokens,
+                            BlockType::Unnamed,
+                            token.clone(),
+                        ));
+                        continue;
+                    }
+                    "}" => {
                         block.range.end = token.location.clone();
+                        if block.init_type == BlockType::DoWhile {
+                            if let Some(next) = tokens.peek() {
+                                if next.spelling == "while" {
+                                    let next = tokens.next();
+                                    block.expression_range =
+                                        Self::find_expression_range(next.unwrap().clone(), tokens);
+                                    tokens.next(); // ; token
+                                }
+                            }
+                        }
                         break;
                     }
+                    _ => (),
                 }
             }
             block.try_find_new_block(token, tokens);
-            if let Some(next) = tokens.clone().next() {
+            if let Some(next) = tokens.peek() {
                 if block.is_oneliner && next.location.line > block.start.clone().unwrap().line {
                     break;
                 }
