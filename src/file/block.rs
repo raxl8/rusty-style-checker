@@ -32,6 +32,7 @@ pub enum BlockType {
     DoWhile,
     Switch,
     Unnamed,
+    Function,
 }
 
 impl BlockType {
@@ -43,7 +44,8 @@ impl BlockType {
             "while" => Self::While,
             "do" => Self::DoWhile,
             "switch" => Self::Switch,
-            _ => Self::Unnamed,
+            "{" => Self::Unnamed,
+            _ => Self::Function,
         }
     }
 }
@@ -66,6 +68,12 @@ impl Block {
     ) -> Option<Range> {
         let mut expression_range: Option<Range> = None;
         let mut depth = 0;
+        while let Some(next) = tokens.peek() {
+            if next.spelling == "(" {
+                break;
+            }
+            tokens.next();
+        }
         for next in tokens.by_ref() {
             match next.spelling.as_str() {
                 "(" => depth += 1,
@@ -116,7 +124,8 @@ impl Block {
             | BlockType::Switch => {
                 self.expression_range = Self::find_expression_range(token, tokens);
             }
-            BlockType::Unnamed => {
+            BlockType::Unnamed | BlockType::Function => {
+                self.expression_range = Self::find_expression_range(token, tokens);
                 while let Some(next) = tokens.peek() {
                     if next.spelling == "{" {
                         break;
@@ -131,7 +140,8 @@ impl Block {
                 self.range.start = next.location.clone();
                 self.is_oneliner = false;
                 tokens.next();
-            } else if self.init_type != BlockType::Unnamed {
+            } else if self.init_type != BlockType::Unnamed && self.init_type != BlockType::Function
+            {
                 self.range.start = next.location.clone();
             } else {
                 return Err(());
