@@ -6,8 +6,10 @@ mod rules;
 use std::path::PathBuf;
 
 use file::SourceFile;
+use ignore::WalkBuilder;
 use rules::RuleExecutor;
-use walkdir::WalkDir;
+
+const IGNORED_FOLDERS: [&str; 2] = ["./tests/", "./bonus/"];
 
 fn process_file(rule_executor: &mut RuleExecutor, path: PathBuf, index: &clang::Index) {
     let tu = index
@@ -24,12 +26,14 @@ fn main() {
     let clang = clang::Clang::new().unwrap();
     let index = clang::Index::new(&clang, false, false);
     let mut rule_executor = RuleExecutor::new();
-    let entries = WalkDir::new(".")
-        .into_iter()
+    let entries = WalkBuilder::new(".")
+        .ignore(false)
+        .build()
         .filter_map(Result::ok)
-        .filter(|e| !e.file_type().is_dir());
+        .filter(|e| e.path().is_file())
+        .filter(|e| !IGNORED_FOLDERS.into_iter().any(|d| e.path().starts_with(d)));
     for entry in entries {
-        let path = entry.clone().into_path();
+        let path = entry.path();
         if let Some(extension) = path.extension() {
             if extension == "c" || extension == "h" {
                 let path = entry.path();
