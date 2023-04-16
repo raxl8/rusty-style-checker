@@ -50,6 +50,7 @@ impl BlockType {
 pub struct Block {
     pub init_type: BlockType,
     pub expression_range: Option<Range>,
+    pub range: Range,
     pub location: Location,
     pub start: Option<Location>,
     pub is_oneliner: bool,
@@ -171,6 +172,10 @@ impl Block {
             init_type,
             expression_range: None,
             location: initial_token.location.clone(),
+            range: Range {
+                start: initial_token.location.clone(),
+                end: initial_token.location.clone(),
+            },
             start: None,
             is_oneliner: true,
             tokens: vec![],
@@ -185,6 +190,7 @@ impl Block {
                 } else if token.spelling == "}" {
                     depth -= 1;
                     if depth == 0 {
+                        block.range.end = token.location.clone();
                         break;
                     }
                 }
