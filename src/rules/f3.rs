@@ -1,4 +1,4 @@
-use crate::file::SourceFile;
+use crate::{file::SourceFile, reporter::Reporter};
 
 pub struct RuleF3;
 
@@ -6,7 +6,7 @@ const TAB_WIDTH: usize = 4;
 const MAX_LINE_LENGTH: usize = 80;
 
 impl super::Rule for RuleF3 {
-    fn analyze(&self, source_file: &SourceFile) {
+    fn analyze(&self, source_file: &SourceFile, reporter: &mut Reporter) {
         for (i, line) in source_file.contents.iter().enumerate() {
             let mut count: usize = 0;
             for c in line.chars() {
@@ -17,7 +17,11 @@ impl super::Rule for RuleF3 {
                 }
             }
             if count > MAX_LINE_LENGTH {
-                println!("{}:{}: C-F3 Violation", source_file.path.display(), i + 1);
+                reporter.report(
+                    source_file.path.clone(),
+                    Some(i as u32 + 1),
+                    "C-F3 Violation",
+                );
             }
         }
     }
