@@ -18,6 +18,7 @@ use self::h2::RuleH2;
 use self::l2::RuleL2;
 use self::o3::RuleO3;
 use self::o4::RuleO4;
+use self::v1::RuleV1;
 use crate::file::SourceFile;
 use crate::reporter::Reporter;
 
@@ -41,6 +42,7 @@ pub mod h2;
 pub mod l2;
 pub mod o3;
 pub mod o4;
+pub mod v1;
 
 pub trait Rule {
     fn analyze(&self, source_file: &SourceFile, reporter: &mut Reporter);
@@ -76,6 +78,7 @@ impl RuleExecutor {
                 Box::new(RuleL2),
                 Box::new(RuleO3),
                 Box::new(RuleO4),
+                Box::new(RuleV1),
             ],
         }
     }
