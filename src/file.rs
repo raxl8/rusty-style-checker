@@ -1,4 +1,8 @@
-use std::path::PathBuf;
+use std::{
+    fs::File,
+    io::{self, BufRead, BufReader},
+    path::{Path, PathBuf},
+};
 
 use clang::{source::SourceLocation, EntityKind, EntityVisitResult};
 
@@ -72,9 +76,17 @@ pub struct MacroDefinition {
     pub location: Location,
 }
 
+#[derive(PartialEq, Eq)]
+pub enum FileKind {
+    Source,
+    Makefile,
+    Other,
+}
+
 pub struct SourceFile {
     pub path: PathBuf,
     pub file_name: String,
+    pub kind: FileKind,
     pub contents: Vec<String>,
     pub include_guarded: bool,
     pub includes: Vec<IncludeDirective>,
@@ -84,8 +96,30 @@ pub struct SourceFile {
     pub functions: Vec<Function>,
 }
 
+fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
+where
+    P: AsRef<Path>,
+{
+    let file = File::open(filename)?;
+    Ok(BufReader::new(file).lines())
+}
+
 impl SourceFile {
-    pub fn new(path: PathBuf) -> Self {
+    pub fn new(path: PathBuf, kind: FileKind) -> Self {
+        let mut contents: Vec<String> = vec![];
+        match kind {
+            FileKind::Source | FileKind::Other => (),
+            FileKind::Makefile => {
+                if let Ok(lines) = read_lines(&path) {
+                    for line in lines {
+                        if let Ok(ip) = line {
+                            contents.push(ip);
+                        }
+                    }
+                }
+            }
+        }
+
         let file_name = path
             .file_name()
             .unwrap()
@@ -95,7 +129,8 @@ impl SourceFile {
         SourceFile {
             path,
             file_name,
-            contents: vec![],
+            kind,
+            contents,
             include_guarded: false,
             includes: vec![],
             macro_definitions: vec![],
@@ -205,7 +240,7 @@ impl SourceFile {
     }
 
     pub fn from_clang(path: PathBuf, unit: clang::TranslationUnit) -> Self {
-        let mut instance = Self::new(path);
+        let mut instance = Self::new(path, FileKind::Source);
         let root = unit.get_entity();
         if let Some(file) = unit.get_file(&instance.path) {
             instance.include_guarded = file.is_include_guarded();

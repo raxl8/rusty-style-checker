@@ -1,9 +1,13 @@
-use crate::{file::SourceFile, reporter::Reporter};
+use crate::{file::{SourceFile, FileKind}, reporter::Reporter};
 
 pub struct RuleO3;
 
 impl super::Rule for RuleO3 {
     fn analyze(&self, source_file: &SourceFile, reporter: &mut Reporter) {
+        if source_file.kind != FileKind::Source {
+            return;
+        }
+
         let count = source_file
             .functions
             .iter()

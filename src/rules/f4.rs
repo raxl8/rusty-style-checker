@@ -1,9 +1,13 @@
-use crate::{file::SourceFile, reporter::Reporter};
+use crate::{file::{SourceFile, FileKind}, reporter::Reporter};
 
 pub struct RuleF4;
 
 impl super::Rule for RuleF4 {
     fn analyze(&self, source_file: &SourceFile, reporter: &mut Reporter) {
+        if source_file.kind != FileKind::Source {
+            return;
+        }
+
         for func in source_file.functions.iter() {
             if let Some(range) = &func.body {
                 for line in range.start.line..range.end.line + 1 {

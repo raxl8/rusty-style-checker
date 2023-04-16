@@ -1,5 +1,5 @@
 use crate::{
-    file::{Function, SourceFile},
+    file::{Function, SourceFile, FileKind},
     reporter::Reporter,
 };
 
@@ -7,6 +7,10 @@ pub struct RuleG2;
 
 impl super::Rule for RuleG2 {
     fn analyze(&self, source_file: &SourceFile, reporter: &mut Reporter) {
+        if source_file.kind != FileKind::Source {
+            return;
+        }
+
         let definitions: Vec<Function> = source_file
             .functions
             .iter()

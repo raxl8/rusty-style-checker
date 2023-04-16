@@ -1,4 +1,4 @@
-use crate::{file::SourceFile, reporter::Reporter};
+use crate::{file::{SourceFile, FileKind}, reporter::Reporter};
 
 pub struct RuleG8;
 
@@ -19,6 +19,11 @@ fn get_last_empty_lines(lines: &Vec<String>) -> Vec<String> {
 
 impl super::Rule for RuleG8 {
     fn analyze(&self, source_file: &SourceFile, reporter: &mut Reporter) {
+        match source_file.kind {
+            FileKind::Source | FileKind::Makefile => {}
+            _ => return,
+        }
+
         let mut empty_lines = get_last_empty_lines(&source_file.contents);
         empty_lines.pop(); // Remove the last empty line as it falls under C-A3
         for i in 0..empty_lines.len() {
