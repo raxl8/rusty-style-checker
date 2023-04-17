@@ -1,11 +1,37 @@
 use clang::token::TokenKind;
+use regex::Regex;
 
-use crate::{file::{
-    block::{Block, BlockType, Token},
-    Location, SourceFile, FileKind,
-}, reporter::Reporter};
+use crate::{
+    file::{
+        block::{Block, BlockType, Token},
+        FileKind, Location, SourceFile,
+    },
+    reporter::Reporter,
+};
 
-pub struct RuleL2;
+pub struct RuleL2 {
+    spaces_regex: Regex,
+}
+
+impl RuleL2 {
+    pub fn new() -> Self {
+        RuleL2 {
+            spaces_regex: Regex::new(r"^( *|( {4})*\S+.*)$").unwrap(),
+        }
+    }
+
+    fn legacy_check_indentation(self: &Self, source_file: &SourceFile, reporter: &mut Reporter) {
+        for (i, line) in source_file.contents.iter().enumerate() {
+            if !self.spaces_regex.is_match(line) {
+                reporter.report(
+                    source_file.path.clone(),
+                    Some(i as u32 + 1),
+                    "C-L2 Violation",
+                );
+            }
+        }
+    }
+}
 
 fn get_first_tokens_each_line(block: &Block) -> Vec<Token> {
     let mut tokens = block.tokens.iter();
@@ -49,6 +75,30 @@ fn verify_indent(source_file: &SourceFile, location: &Location, depth: u32) -> b
     true
 }
 
+fn verify_block_place(
+    source_file: &SourceFile,
+    prev: Option<&Block>,
+    current: &Block,
+    depth: u32,
+) -> Result<(), Location> {
+    match prev {
+        Some(prev) => {
+            if prev.is_oneliner && !verify_indent(source_file, &current.location, depth) {
+                return Err(current.range.start.clone());
+            }
+        }
+        _ => {
+            if !verify_indent(source_file, &current.location, depth) {
+                return Err(current.range.start.clone());
+            }
+        }
+    }
+    if !current.is_oneliner && !verify_indent(source_file, &current.range.end, depth) {
+        return Err(current.range.end.clone());
+    }
+    Ok(())
+}
+
 fn process_blocks(source_file: &SourceFile, reporter: &mut Reporter, block: &Block, depth: u32) {
     if depth > 10 {
         return;
@@ -85,17 +135,11 @@ fn process_blocks(source_file: &SourceFile, reporter: &mut Reporter, block: &Blo
         while let Some(next) = children.peek() {
             match next.init_type {
                 BlockType::Else | BlockType::ElseIf => {
-                    if prev.is_oneliner && !verify_indent(source_file, &next.location, depth) {
+                    if let Err(location) = verify_block_place(source_file, Some(prev), next, depth)
+                    {
                         reporter.report(
                             source_file.path.clone(),
-                            Some(next.range.start.line),
-                            "C-L2 Violation",
-                        );
-                    }
-                    if !next.is_oneliner && !verify_indent(source_file, &next.range.end, depth) {
-                        reporter.report(
-                            source_file.path.clone(),
-                            Some(next.range.end.line),
+                            Some(location.line),
                             "C-L2 Violation",
                         );
                     }
@@ -105,27 +149,24 @@ fn process_blocks(source_file: &SourceFile, reporter: &mut Reporter, block: &Blo
             }
             prev = children.next().unwrap();
         }
-        if !verify_indent(source_file, &current.location, depth) {
+        if let Err(location) = verify_block_place(source_file, None, &current, depth) {
             reporter.report(
                 source_file.path.clone(),
-                Some(current.range.start.line),
-                "C-L2 Violation",
-            );
-        }
-        if !current.is_oneliner && !verify_indent(source_file, &current.range.end, depth) {
-            reporter.report(
-                source_file.path.clone(),
-                Some(current.range.end.line),
+                Some(location.line),
                 "C-L2 Violation",
             );
         }
         process_blocks(source_file, reporter, &current, depth + 1);
     }
 }
-
 impl super::Rule for RuleL2 {
     fn analyze(&self, source_file: &SourceFile, reporter: &mut Reporter) {
         if source_file.kind != FileKind::Source {
+            return;
+        }
+
+        if !reporter.advanced_rules {
+            self.legacy_check_indentation(source_file, reporter);
             return;
         }
 
