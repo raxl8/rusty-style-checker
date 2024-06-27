@@ -9,24 +9,25 @@ use crate::file::{
 
 pub struct RuleL2;
 
+fn get_first_tokens_each_line(block: &Block) -> Vec<Token> {
+    let mut tokens: Vec<Token> = Vec::new();
+    let mut lines: HashSet<u32> = HashSet::new();
+    for token in block.tokens.iter() {
+        if lines.contains(&token.location.line) {
+            continue;
+        }
+        lines.insert(token.location.line);
+        tokens.push(token.clone());
+    }
+    tokens
+}
+
 fn process_blocks(source_file: &SourceFile, block: &Block, depth: u32) {
     if depth > 10 {
         return;
     }
 
-    let mut lines: HashSet<u32> = HashSet::new();
-    let tokens: Vec<Token> = block
-        .tokens
-        .iter()
-        .filter(|token| {
-            if lines.contains(&token.location.line) {
-                return false;
-            }
-            lines.insert(token.location.line);
-            true
-        })
-        .cloned()
-        .collect();
+    let tokens: Vec<Token> = get_first_tokens_each_line(block);
     let mut indent: u32 = 0;
     let mut is_case: bool = false;
     for token in tokens.iter() {
