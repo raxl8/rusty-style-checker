@@ -57,7 +57,7 @@ fn process_blocks(source_file: &SourceFile, block: &Block, depth: u32) {
         if !verify_indent(source_file, &token.location, depth + indent) {
             println!(
                 "{}:{}: L-L2 Violation",
-                source_file.path, token.location.line
+                source_file.path.display(), token.location.line
             );
         }
         if is_case {
@@ -69,7 +69,7 @@ fn process_blocks(source_file: &SourceFile, block: &Block, depth: u32) {
         if !verify_indent(source_file, &child.location, depth) {
             println!(
                 "{}:{}: L-L2 Violation",
-                source_file.path, child.location.line
+                source_file.path.display(), child.location.line
             );
         }
         process_blocks(source_file, child, depth + 1);

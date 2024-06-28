@@ -17,7 +17,7 @@ impl super::Rule for RuleF3 {
                 }
             }
             if count > MAX_LINE_LENGTH {
-                println!("{}:{}: C-F3 Violation", source_file.path, i + 1);
+                println!("{}:{}: C-F3 Violation", source_file.path.display(), i + 1);
             }
         }
     }

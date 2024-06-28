@@ -12,7 +12,7 @@ fn process_blocks(source_file: &SourceFile, block: &Block, depth: u32) {
         if token.kind == TokenKind::Comment {
             println!(
                 "{}:{}: C-F8 Violation",
-                source_file.path, token.location.line
+                source_file.path.display(), token.location.line
             );
         }
     }

@@ -11,7 +11,7 @@ impl super::Rule for RuleF4 {
                     if body_line_num > 20 {
                         println!(
                             "{}:{}: C-F4 Violation",
-                            source_file.path, line
+                            source_file.path.display(), line
                         );
                     }
                 }

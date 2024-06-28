@@ -1,3 +1,5 @@
+use std::path::{PathBuf};
+
 use clang::{source::SourceLocation, EntityKind, EntityVisitResult};
 
 use self::block::{Block, Token};
@@ -56,7 +58,8 @@ pub struct Variable {
 }
 
 pub struct SourceFile {
-    pub path: String,
+    pub path: PathBuf,
+    pub file_name: String,
     pub contents: Vec<String>,
     pub include_guarded: bool,
     pub includes: Vec<IncludeDirective>,
@@ -65,9 +68,11 @@ pub struct SourceFile {
 }
 
 impl SourceFile {
-    pub fn new(path: String) -> Self {
+    pub fn new(path: PathBuf) -> Self {
+        let file_name = path.file_name().unwrap().to_os_string().into_string().unwrap();
         SourceFile {
             path,
+            file_name,
             contents: vec![],
             include_guarded: false,
             includes: vec![],
@@ -155,10 +160,10 @@ impl SourceFile {
         self.global_variables.push(variable);
     }
 
-    pub fn from_clang(path: String, unit: clang::TranslationUnit) -> Self {
-        let mut instance = Self::new(path.clone());
+    pub fn from_clang(path: PathBuf, unit: clang::TranslationUnit) -> Self {
+        let mut instance = Self::new(path);
         let root = unit.get_entity();
-        if let Some(file) = unit.get_file(path) {
+        if let Some(file) = unit.get_file(&instance.path) {
             instance.include_guarded = file.is_include_guarded();
             if let Some(contents) = file.get_contents() {
                 instance.contents = contents.split('\n').map(|s| s.to_string()).collect();
