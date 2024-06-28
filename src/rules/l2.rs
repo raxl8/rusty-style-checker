@@ -4,7 +4,7 @@ use clang::token::TokenKind;
 
 use crate::file::{
     block::{Block, BlockType, Token},
-    SourceFile,
+    Location, SourceFile,
 };
 
 pub struct RuleL2;
@@ -22,6 +22,20 @@ fn get_first_tokens_each_line(block: &Block) -> Vec<Token> {
     tokens
 }
 
+fn verify_indent(source_file: &SourceFile, location: &Location, depth: u32) -> bool {
+    if location.column != depth * 4 + 1 {
+        return false;
+    }
+    let line = &source_file.contents[location.line as usize - 1];
+    for i in 0..location.column - 1 {
+        match line.chars().nth(i as usize) {
+            Some(' ') => {}
+            _ => return false,
+        }
+    }
+    true
+}
+
 fn process_blocks(source_file: &SourceFile, block: &Block, depth: u32) {
     if depth > 10 {
         return;
@@ -31,13 +45,16 @@ fn process_blocks(source_file: &SourceFile, block: &Block, depth: u32) {
     let mut indent: u32 = 0;
     let mut is_case: bool = false;
     for token in tokens.iter() {
-        if block.init_type == BlockType::Switch {
-            if token.kind == TokenKind::Keyword && token.spelling == "case" {
-                indent = 0;
-                is_case = true;
+        if block.init_type == BlockType::Switch && token.kind == TokenKind::Keyword {
+            match token.spelling.as_str() {
+                "case" | "default" => {
+                    indent = 0;
+                    is_case = true;
+                }
+                _ => {}
             }
         }
-        if token.location.column != (depth + indent) * 4 + 1 {
+        if !verify_indent(source_file, &token.location, depth + indent) {
             println!(
                 "{}:{}: L-L2 Violation",
                 source_file.path, token.location.line
@@ -49,7 +66,7 @@ fn process_blocks(source_file: &SourceFile, block: &Block, depth: u32) {
         }
     }
     for child in block.children.iter() {
-        if child.location.column != depth * 4 + 1 {
+        if !verify_indent(source_file, &child.location, depth) {
             println!(
                 "{}:{}: L-L2 Violation",
                 source_file.path, child.location.line
