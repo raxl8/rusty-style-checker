@@ -22,7 +22,7 @@ impl Token {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BlockType {
     If,
     Else,
@@ -46,7 +46,7 @@ impl BlockType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Block {
     pub init_type: BlockType,
     pub expression_range: Option<Range>,
