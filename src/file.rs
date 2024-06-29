@@ -1,4 +1,4 @@
-use std::path::{PathBuf};
+use std::path::PathBuf;
 
 use clang::{source::SourceLocation, EntityKind, EntityVisitResult};
 
@@ -33,12 +33,12 @@ pub struct IncludeDirective {
     pub location: Location,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Param {
     pub name: String,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Function {
     pub name: String,
     pub params: Vec<Param>,
@@ -50,6 +50,8 @@ pub struct Function {
     pub is_definition: bool,
     pub is_variadic: bool,
     pub is_type_variadic: bool,
+    pub is_static: bool,
+    pub is_inline: bool,
 }
 
 pub struct Variable {
@@ -84,7 +86,12 @@ pub struct SourceFile {
 
 impl SourceFile {
     pub fn new(path: PathBuf) -> Self {
-        let file_name = path.file_name().unwrap().to_os_string().into_string().unwrap();
+        let file_name = path
+            .file_name()
+            .unwrap()
+            .to_os_string()
+            .into_string()
+            .unwrap();
         SourceFile {
             path,
             file_name,
@@ -151,6 +158,8 @@ impl SourceFile {
             is_definition: entity.is_definition(),
             is_variadic: entity.is_variadic(),
             is_type_variadic: entity.get_type().unwrap().is_variadic(),
+            is_static: entity.get_linkage().unwrap() == clang::Linkage::Internal,
+            is_inline: entity.is_inline_function(),
         };
         for argument in entity.get_arguments().unwrap() {
             let param = Param {

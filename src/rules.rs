@@ -14,6 +14,7 @@ use self::g5::RuleG5;
 use self::g6::RuleG6;
 use self::g7::RuleG7;
 use self::g8::RuleG8;
+use self::h1::RuleH1;
 use self::h2::RuleH2;
 use self::l2::RuleL2;
 use self::o3::RuleO3;
@@ -38,6 +39,7 @@ pub mod g5;
 pub mod g6;
 pub mod g7;
 pub mod g8;
+pub mod h1;
 pub mod h2;
 pub mod l2;
 pub mod o3;
@@ -74,6 +76,7 @@ impl RuleExecutor {
                 Box::new(RuleG6),
                 Box::new(RuleG7),
                 Box::new(RuleG8),
+                Box::new(RuleH1),
                 Box::new(RuleH2),
                 Box::new(RuleL2),
                 Box::new(RuleO3),
