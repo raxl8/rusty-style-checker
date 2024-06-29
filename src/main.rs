@@ -9,9 +9,8 @@ use rules::RuleExecutor;
 use walkdir::WalkDir;
 
 fn process_file(rule_executor: &RuleExecutor, path: PathBuf, index: &clang::Index) {
-    let path_str = path.to_str().unwrap();
     let tu = index
-        .parser(path_str)
+        .parser(&path)
         .detailed_preprocessing_record(true)
         .parse();
     if let Ok(tu) = tu {
