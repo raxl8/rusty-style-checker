@@ -8,7 +8,7 @@ const MAX_LINE_LENGTH: usize = 80;
 impl super::Rule for RuleF3 {
     fn analyze(&self, source_file: &SourceFile) {
         for (i, line) in source_file.contents.iter().enumerate() {
-            let mut count: usize = 1; // Count \n as a column
+            let mut count: usize = 0;
             for c in line.chars() {
                 if c == '\t' {
                     count += TAB_WIDTH;
