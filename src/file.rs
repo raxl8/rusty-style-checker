@@ -140,11 +140,11 @@ impl SourceFile {
             }
             EntityVisitResult::Continue
         });
-        let mut tokens = function.tokens.iter();
+        let mut tokens = function.tokens.iter().peekable();
         let initial_token = tokens.next().unwrap();
         function.block = Some(Block::from_tokens(
             &mut tokens,
-            block::BlockType::Function,
+            block::BlockType::Unnamed,
             initial_token.clone(),
         ));
         self.functions.push(function);
