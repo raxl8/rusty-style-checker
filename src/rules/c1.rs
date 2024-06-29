@@ -1,18 +1,22 @@
-use crate::file::{
-    block::{Block, BlockType},
-    SourceFile,
+use crate::{
+    file::{
+        block::{Block, BlockType},
+        SourceFile,
+    },
+    reporter::Reporter,
 };
 
 pub struct RuleC1;
 
-fn process_blocks(source_file: &SourceFile, block: &Block, depth: u32) {
+fn process_blocks(source_file: &SourceFile, reporter: &mut Reporter, block: &Block, depth: u32) {
     if depth > 10 {
         return;
     }
     if depth >= 3 {
-        println!(
-            "{}:{} C-C1 Violation",
-            source_file.path.display(), block.location.line
+        reporter.report(
+            source_file.path.clone(),
+            Some(block.location.line),
+            "C-C1 Violation",
         );
     }
     let mut inline_depth = 0;
@@ -24,15 +28,15 @@ fn process_blocks(source_file: &SourceFile, block: &Block, depth: u32) {
             BlockType::ElseIf => inline_depth += 1,
             _ => (),
         }
-        process_blocks(source_file, child, depth + inline_depth);
+        process_blocks(source_file, reporter, child, depth + inline_depth);
     }
 }
 
 impl super::Rule for RuleC1 {
-    fn analyze(&self, source_file: &SourceFile) {
+    fn analyze(&self, source_file: &SourceFile, reporter: &mut Reporter) {
         for func in source_file.functions.iter() {
             if let Some(block) = func.block.as_ref() {
-                process_blocks(source_file, block, 0);
+                process_blocks(source_file, reporter, block, 0);
             }
         }
     }

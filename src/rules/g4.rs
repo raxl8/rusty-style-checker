@@ -1,15 +1,19 @@
-use crate::file::SourceFile;
+use crate::{file::SourceFile, reporter::Reporter};
 
 pub struct RuleG4;
 
 impl super::Rule for RuleG4 {
-    fn analyze(&self, source_file: &SourceFile) {
+    fn analyze(&self, source_file: &SourceFile, reporter: &mut Reporter) {
         let non_const_global_vars = source_file
             .global_variables
             .iter()
-            .filter(|var| !var.is_constant);
+            .filter(|var| !var.is_constant && var.is_definition);
         for var in non_const_global_vars {
-            println!("{}:{}: C-G4 Violation", source_file.path.display(), var.location.line);
+            reporter.report(
+                source_file.path.clone(),
+                Some(var.location.line),
+                "C-G4 Violation",
+            );
         }
     }
 }

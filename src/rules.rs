@@ -19,6 +19,7 @@ use self::l2::RuleL2;
 use self::o3::RuleO3;
 use self::o4::RuleO4;
 use crate::file::SourceFile;
+use crate::reporter::Reporter;
 
 pub mod a3;
 pub mod c1;
@@ -42,16 +43,18 @@ pub mod o3;
 pub mod o4;
 
 pub trait Rule {
-    fn analyze(&self, source_file: &SourceFile);
+    fn analyze(&self, source_file: &SourceFile, reporter: &mut Reporter);
 }
 
 pub struct RuleExecutor {
+    reporter: Reporter,
     rules: Vec<Box<dyn Rule>>,
 }
 
 impl RuleExecutor {
     pub fn new() -> Self {
         RuleExecutor {
+            reporter: Reporter::new(),
             rules: vec![
                 Box::new(RuleA3),
                 Box::new(RuleC1),
@@ -77,15 +80,13 @@ impl RuleExecutor {
         }
     }
 
-    pub fn run(&self, source_file: &SourceFile) {
+    pub fn run(&mut self, source_file: &SourceFile) {
         for rule in &self.rules {
-            rule.analyze(source_file)
+            rule.analyze(source_file, &mut self.reporter)
         }
     }
-}
 
-impl Default for RuleExecutor {
-    fn default() -> Self {
-        Self::new()
+    pub fn report(&self) {
+        self.reporter.print();
     }
 }

@@ -54,6 +54,7 @@ pub struct Function {
 
 pub struct Variable {
     pub is_constant: bool,
+    pub is_definition: bool,
     pub location: Location,
 }
 
@@ -152,6 +153,7 @@ impl SourceFile {
     fn add_global_variable(&mut self, entity: clang::Entity) {
         let variable = Variable {
             location: Location::from_clang(entity.get_location().unwrap()),
+            is_definition: entity.is_definition(),
             is_constant: match entity.get_type() {
                 Some(t) => t.is_const_qualified(),
                 _ => false,

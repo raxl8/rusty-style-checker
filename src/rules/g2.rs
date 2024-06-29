@@ -1,9 +1,12 @@
-use crate::file::{SourceFile, Function};
+use crate::{
+    file::{Function, SourceFile},
+    reporter::Reporter,
+};
 
 pub struct RuleG2;
 
 impl super::Rule for RuleG2 {
-    fn analyze(&self, source_file: &SourceFile) {
+    fn analyze(&self, source_file: &SourceFile, reporter: &mut Reporter) {
         let definitions: Vec<Function> = source_file
             .functions
             .iter()
@@ -12,7 +15,11 @@ impl super::Rule for RuleG2 {
             .collect();
         for (current, next) in definitions.iter().zip(definitions.iter().skip(1)) {
             if current.range.end.line != next.location.line - 2 {
-                println!("{}:{}: C-G2 Violation", source_file.path.display(), next.location.line);
+                reporter.report(
+                    source_file.path.clone(),
+                    Some(next.location.line),
+                    "C-G2 Violation",
+                );
             }
         }
     }
