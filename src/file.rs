@@ -53,8 +53,20 @@ pub struct Function {
 }
 
 pub struct Variable {
+    pub name: String,
+    pub location: Location,
     pub is_constant: bool,
     pub is_definition: bool,
+}
+
+#[derive(Debug)]
+pub struct TypeDefinition {
+    pub name: String,
+    pub location: Location,
+}
+
+pub struct MacroDefinition {
+    pub name: String,
     pub location: Location,
 }
 
@@ -64,6 +76,8 @@ pub struct SourceFile {
     pub contents: Vec<String>,
     pub include_guarded: bool,
     pub includes: Vec<IncludeDirective>,
+    pub macro_definitions: Vec<MacroDefinition>,
+    pub type_definitions: Vec<TypeDefinition>,
     pub global_variables: Vec<Variable>,
     pub functions: Vec<Function>,
 }
@@ -77,6 +91,8 @@ impl SourceFile {
             contents: vec![],
             include_guarded: false,
             includes: vec![],
+            macro_definitions: vec![],
+            type_definitions: vec![],
             global_variables: vec![],
             functions: vec![],
         }
@@ -88,6 +104,35 @@ impl SourceFile {
             location: Location::from_clang(entity.get_location().unwrap()),
         };
         self.includes.push(include_directive);
+    }
+
+    fn add_macro_definition(&mut self, entity: clang::Entity) {
+        let macro_definition = MacroDefinition {
+            name: entity.get_name().unwrap_or_default(),
+            location: Location::from_clang(entity.get_location().unwrap()),
+        };
+        self.macro_definitions.push(macro_definition);
+    }
+
+    fn add_type_definition(&mut self, entity: clang::Entity) {
+        let type_definition = TypeDefinition {
+            name: entity.get_name().unwrap_or_default(),
+            location: Location::from_clang(entity.get_location().unwrap()),
+        };
+        self.type_definitions.push(type_definition);
+    }
+
+    fn add_global_variable(&mut self, entity: clang::Entity) {
+        let variable = Variable {
+            name: entity.get_name().unwrap_or_default(),
+            location: Location::from_clang(entity.get_location().unwrap()),
+            is_definition: entity.is_definition(),
+            is_constant: match entity.get_type() {
+                Some(t) => t.is_const_qualified(),
+                _ => false,
+            },
+        };
+        self.global_variables.push(variable);
     }
 
     fn add_function(&mut self, entity: clang::Entity) {
@@ -150,18 +195,6 @@ impl SourceFile {
         self.functions.push(function);
     }
 
-    fn add_global_variable(&mut self, entity: clang::Entity) {
-        let variable = Variable {
-            location: Location::from_clang(entity.get_location().unwrap()),
-            is_definition: entity.is_definition(),
-            is_constant: match entity.get_type() {
-                Some(t) => t.is_const_qualified(),
-                _ => false,
-            },
-        };
-        self.global_variables.push(variable);
-    }
-
     pub fn from_clang(path: PathBuf, unit: clang::TranslationUnit) -> Self {
         let mut instance = Self::new(path);
         let root = unit.get_entity();
@@ -176,9 +209,11 @@ impl SourceFile {
                 return EntityVisitResult::Continue;
             }
             match child.get_kind() {
-                EntityKind::FunctionDecl => instance.add_function(child),
-                EntityKind::VarDecl => instance.add_global_variable(child),
                 EntityKind::InclusionDirective => instance.add_include_directive(child),
+                EntityKind::MacroDefinition => instance.add_macro_definition(child),
+                EntityKind::TypedefDecl => instance.add_type_definition(child),
+                EntityKind::VarDecl => instance.add_global_variable(child),
+                EntityKind::FunctionDecl => instance.add_function(child),
                 _ => (),
             }
             EntityVisitResult::Continue
