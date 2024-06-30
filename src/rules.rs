@@ -19,6 +19,7 @@ use self::h1::RuleH1;
 use self::h2::RuleH2;
 use self::l2::RuleL2;
 use self::l4::RuleL4;
+use self::o1::RuleO1;
 use self::o3::RuleO3;
 use self::o4::RuleO4;
 use self::v1::RuleV1;
@@ -46,6 +47,7 @@ pub mod h1;
 pub mod h2;
 pub mod l2;
 pub mod l4;
+pub mod o1;
 pub mod o3;
 pub mod o4;
 pub mod v1;
@@ -85,6 +87,7 @@ impl RuleExecutor {
                 Box::new(RuleH2),
                 Box::new(RuleL2::new()),
                 Box::new(RuleL4),
+                Box::new(RuleO1::new()),
                 Box::new(RuleO3),
                 Box::new(RuleO4),
                 Box::new(RuleV1),

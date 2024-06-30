@@ -87,6 +87,7 @@ pub struct SourceFile {
     pub path: PathBuf,
     pub file_name: String,
     pub kind: FileKind,
+    pub first_bytes: Vec<u8>,
     pub contents: Vec<String>,
     pub include_guarded: bool,
     pub includes: Vec<IncludeDirective>,
@@ -109,14 +110,32 @@ where
         .collect::<Vec<String>>())
 }
 
+fn read_first_bytes<P>(filename: P, n: usize) -> io::Result<Vec<u8>>
+where
+    P: AsRef<Path>,
+{
+    let mut file = File::open(filename)?;
+    let mut buf = vec![0; n];
+    file.read_exact(&mut buf)?;
+    Ok(buf)
+}
+
 impl SourceFile {
     pub fn new(path: PathBuf, kind: FileKind) -> Self {
         let mut contents: Vec<String> = vec![];
+        let mut first_bytes: Vec<u8> = vec![];
         match kind {
-            FileKind::Source | FileKind::Other => (),
+            FileKind::Source => (),
             FileKind::Makefile => {
-                if let Ok(lines) = read_lines(&path) {
-                    contents = lines;
+                match read_lines(&path) {
+                    Ok(lines) => contents = lines,
+                    Err(e) => println!("Could not read file: {:?}", e),
+                }
+            }
+            FileKind::Other => {
+                match read_first_bytes(&path, 4) {
+                    Ok(bytes) => first_bytes = bytes,
+                    Err(e) => println!("Could not read file: {:?}", e),
                 }
             }
         }
@@ -131,6 +150,7 @@ impl SourceFile {
             path,
             file_name,
             kind,
+            first_bytes,
             contents,
             include_guarded: false,
             includes: vec![],
