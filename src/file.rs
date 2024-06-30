@@ -198,7 +198,7 @@ impl SourceFile {
         let initial_token = tokens.next().unwrap();
         function.block = Some(Block::from_tokens(
             &mut tokens,
-            block::BlockType::Unnamed,
+            block::BlockType::Function,
             initial_token.clone(),
         ));
         self.functions.push(function);
