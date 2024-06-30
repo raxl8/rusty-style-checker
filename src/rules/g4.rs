@@ -1,9 +1,13 @@
-use crate::{file::SourceFile, reporter::Reporter};
+use crate::{file::{SourceFile, FileKind}, reporter::Reporter};
 
 pub struct RuleG4;
 
 impl super::Rule for RuleG4 {
     fn analyze(&self, source_file: &SourceFile, reporter: &mut Reporter) {
+        if source_file.kind != FileKind::Source {
+            return;
+        }
+
         let non_const_global_vars = source_file
             .global_variables
             .iter()

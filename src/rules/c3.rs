@@ -1,7 +1,7 @@
 use clang::token::TokenKind;
 
 use crate::{
-    file::{block::Block, SourceFile},
+    file::{block::Block, SourceFile, FileKind},
     reporter::Reporter,
 };
 
@@ -28,6 +28,10 @@ fn process_blocks(source_file: &SourceFile, reporter: &mut Reporter, block: &Blo
 
 impl super::Rule for RuleC3 {
     fn analyze(&self, source_file: &SourceFile, reporter: &mut Reporter) {
+        if source_file.kind != FileKind::Source {
+            return;
+        }
+
         for func in source_file.functions.iter() {
             if let Some(block) = func.block.as_ref() {
                 process_blocks(source_file, reporter, block, 0);

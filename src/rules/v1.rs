@@ -1,9 +1,12 @@
-use crate::{file::SourceFile, naming::{is_snake_case, is_upper_snake_case}, reporter::Reporter};
+use crate::{file::{SourceFile, FileKind}, naming::{is_snake_case, is_upper_snake_case}, reporter::Reporter};
 
 pub struct RuleV1;
 
 impl super::Rule for RuleV1 {
     fn analyze(&self, source_file: &SourceFile, reporter: &mut Reporter) {
+        if source_file.kind != FileKind::Source {
+            return;
+        }
         for macro_definition in source_file.macro_definitions.iter() {
             if !is_upper_snake_case(macro_definition.name.as_str()) {
                 reporter.report(

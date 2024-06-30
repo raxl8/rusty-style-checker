@@ -73,7 +73,7 @@ impl RuleExecutor {
                 Box::new(RuleF5),
                 Box::new(RuleF6),
                 Box::new(RuleF8),
-                Box::new(RuleG1),
+                Box::new(RuleG1::new()),
                 Box::new(RuleG2),
                 Box::new(RuleG3),
                 Box::new(RuleG4),

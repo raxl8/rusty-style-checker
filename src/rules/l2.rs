@@ -2,7 +2,7 @@ use clang::token::TokenKind;
 
 use crate::{file::{
     block::{Block, BlockType, Token},
-    Location, SourceFile,
+    Location, SourceFile, FileKind,
 }, reporter::Reporter};
 
 pub struct RuleL2;
@@ -125,6 +125,10 @@ fn process_blocks(source_file: &SourceFile, reporter: &mut Reporter, block: &Blo
 
 impl super::Rule for RuleL2 {
     fn analyze(&self, source_file: &SourceFile, reporter: &mut Reporter) {
+        if source_file.kind != FileKind::Source {
+            return;
+        }
+
         for func in source_file.functions.iter() {
             if let Some(block) = func.block.as_ref() {
                 process_blocks(source_file, reporter, block, 1);

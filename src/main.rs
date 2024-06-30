@@ -5,13 +5,13 @@ mod rules;
 
 use std::path::PathBuf;
 
-use file::SourceFile;
+use file::{SourceFile, FileKind};
 use ignore::WalkBuilder;
 use rules::RuleExecutor;
 
 const IGNORED_FOLDERS: [&str; 2] = ["./tests/", "./bonus/"];
 
-fn process_file(rule_executor: &mut RuleExecutor, path: PathBuf, index: &clang::Index) {
+fn process_source_file(rule_executor: &mut RuleExecutor, path: PathBuf, index: &clang::Index) {
     let tu = index
         .parser(&path)
         .detailed_preprocessing_record(true)
@@ -20,6 +20,16 @@ fn process_file(rule_executor: &mut RuleExecutor, path: PathBuf, index: &clang::
         let source_file = SourceFile::from_clang(path, tu);
         rule_executor.run(&source_file);
     }
+}
+
+fn process_lambda_file(rule_executor: &mut RuleExecutor, path: PathBuf) {
+    let kind = if path.file_name().unwrap() == "Makefile" {
+        FileKind::Makefile
+    } else {
+        FileKind::Other
+    };
+    let source_file = SourceFile::new(path, kind);
+    rule_executor.run(&source_file);
 }
 
 fn main() {
@@ -37,9 +47,11 @@ fn main() {
         if let Some(extension) = path.extension() {
             if extension == "c" || extension == "h" {
                 let path = entry.path();
-                process_file(&mut rule_executor, path.to_path_buf(), &index);
+                process_source_file(&mut rule_executor, path.to_path_buf(), &index);
+                continue;
             }
         }
+        process_lambda_file(&mut rule_executor, path.to_path_buf());
     }
     rule_executor.report();
 }

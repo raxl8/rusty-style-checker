@@ -1,7 +1,7 @@
 use crate::{
     file::{
         block::{Block, BlockType},
-        Range, SourceFile,
+        Range, SourceFile, FileKind,
     },
     reporter::Reporter,
 };
@@ -77,6 +77,10 @@ fn process_blocks(source_file: &SourceFile, reporter: &mut Reporter, block: &Blo
 
 impl super::Rule for RuleL4 {
     fn analyze(&self, source_file: &SourceFile, reporter: &mut Reporter) {
+        if source_file.kind != FileKind::Source {
+            return;
+        }
+
         let function_definitions = source_file.functions.iter().filter(|f| f.is_definition);
         for func in function_definitions {
             if let Some(block) = func.block.as_ref() {
