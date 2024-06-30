@@ -54,7 +54,6 @@ pub struct Block {
     pub expression_range: Option<Range>,
     pub range: Range,
     pub location: Location,
-    pub start: Option<Location>,
     pub is_oneliner: bool,
     pub tokens: Vec<Token>,
     pub children: Vec<Block>,
@@ -90,7 +89,7 @@ impl Block {
         tokens: &mut Peekable<Iter<Token>>,
     ) -> Result<(), ()> {
         if token.kind == TokenKind::Punctuation && token.spelling == "{" {
-            self.start = Some(token.location.clone());
+            self.range.start = token.location.clone();
             self.is_oneliner = false;
             return Ok(());
         }
@@ -129,11 +128,11 @@ impl Block {
         }
         if let Some(next) = tokens.peek() {
             if next.spelling == "{" {
-                self.start = Some(next.location.clone());
+                self.range.start = next.location.clone();
                 self.is_oneliner = false;
                 tokens.next();
             } else if self.init_type != BlockType::Unnamed {
-                self.start = Some(next.location.clone());
+                self.range.start = next.location.clone();
             } else {
                 return Err(());
             }
@@ -190,7 +189,6 @@ impl Block {
                 start: initial_token.location.clone(),
                 end: initial_token.location.clone(),
             },
-            start: None,
             is_oneliner: true,
             tokens: vec![],
             children: vec![],
@@ -226,7 +224,7 @@ impl Block {
             }
             block.try_find_new_block(token, tokens);
             if let Some(next) = tokens.peek() {
-                if block.is_oneliner && next.location.line > block.start.clone().unwrap().line {
+                if block.is_oneliner && next.location.line > block.range.start.line {
                     break;
                 }
             }

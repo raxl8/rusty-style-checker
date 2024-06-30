@@ -85,7 +85,7 @@ fn process_blocks(source_file: &SourceFile, reporter: &mut Reporter, block: &Blo
         while let Some(next) = children.peek() {
             match next.init_type {
                 BlockType::Else | BlockType::ElseIf => {
-                    if prev.is_oneliner && !verify_indent(source_file, &next.range.start, depth) {
+                    if prev.is_oneliner && !verify_indent(source_file, &next.location, depth) {
                         reporter.report(
                             source_file.path.clone(),
                             Some(next.range.start.line),
@@ -105,7 +105,7 @@ fn process_blocks(source_file: &SourceFile, reporter: &mut Reporter, block: &Blo
             }
             prev = children.next().unwrap();
         }
-        if !verify_indent(source_file, &current.range.start, depth) {
+        if !verify_indent(source_file, &current.location, depth) {
             reporter.report(
                 source_file.path.clone(),
                 Some(current.range.start.line),
