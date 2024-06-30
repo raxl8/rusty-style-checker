@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{self, BufRead, BufReader},
+    io::{self, BufReader, Read},
     path::{Path, PathBuf},
 };
 
@@ -96,12 +96,17 @@ pub struct SourceFile {
     pub functions: Vec<Function>,
 }
 
-fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
+fn read_lines<P>(filename: P) -> io::Result<Vec<String>>
 where
     P: AsRef<Path>,
 {
     let file = File::open(filename)?;
-    Ok(BufReader::new(file).lines())
+    let mut line = String::new();
+    BufReader::new(file).read_to_string(&mut line)?;
+    Ok(line
+        .split('\n')
+        .map(|str| String::from(str))
+        .collect::<Vec<String>>())
 }
 
 impl SourceFile {
@@ -111,11 +116,7 @@ impl SourceFile {
             FileKind::Source | FileKind::Other => (),
             FileKind::Makefile => {
                 if let Ok(lines) = read_lines(&path) {
-                    for line in lines {
-                        if let Ok(ip) = line {
-                            contents.push(ip);
-                        }
-                    }
+                    contents = lines;
                 }
             }
         }
