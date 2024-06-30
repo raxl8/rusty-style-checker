@@ -140,12 +140,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f162c6dd7b008981e4d40210aca20b4bd0f9b60ca9271061b07f78537722f2e1"
 
 [[package]]
+name = "rustop"
+version = "1.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cac77bea4e5c89acb455a2fe072bc19334cb130691af6e1bed4625d3f5396e89"
+
+[[package]]
 name = "rusty-style-checker"
 version = "0.1.0"
 dependencies = [
  "clang",
  "ignore",
  "regex",
+ "rustop",
 ]
 
 [[package]]

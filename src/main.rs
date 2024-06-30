@@ -5,9 +5,10 @@ mod rules;
 
 use std::path::PathBuf;
 
-use file::{SourceFile, FileKind};
+use file::{FileKind, SourceFile};
 use ignore::WalkBuilder;
 use rules::RuleExecutor;
+use rustop::opts;
 
 const IGNORED_FOLDERS: [&str; 2] = ["./tests/", "./bonus/"];
 
@@ -33,9 +34,15 @@ fn process_lambda_file(rule_executor: &mut RuleExecutor, path: PathBuf) {
 }
 
 fn main() {
+    let (args, _) = opts! {
+        synopsis "Check the style of your C code.";
+        opt advanced:bool=false, desc:"Enable advanced rules.";
+    }
+    .parse_or_exit();
+
     let clang = clang::Clang::new().unwrap();
     let index = clang::Index::new(&clang, false, false);
-    let mut rule_executor = RuleExecutor::new();
+    let mut rule_executor = RuleExecutor::new(args.advanced);
     let entries = WalkBuilder::new(".")
         .ignore(false)
         .build()

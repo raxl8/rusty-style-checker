@@ -60,9 +60,9 @@ pub struct RuleExecutor {
 }
 
 impl RuleExecutor {
-    pub fn new() -> Self {
+    pub fn new(advanced_rules: bool) -> Self {
         RuleExecutor {
-            reporter: Reporter::new(),
+            reporter: Reporter::new(advanced_rules),
             rules: vec![
                 Box::new(RuleA3),
                 Box::new(RuleC1),
@@ -83,7 +83,7 @@ impl RuleExecutor {
                 Box::new(RuleG8),
                 Box::new(RuleH1),
                 Box::new(RuleH2),
-                Box::new(RuleL2),
+                Box::new(RuleL2::new()),
                 Box::new(RuleL4),
                 Box::new(RuleO3),
                 Box::new(RuleO4),

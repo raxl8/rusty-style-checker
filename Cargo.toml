@@ -9,3 +9,4 @@ edition = "2021"
 clang = { version = "2.0.0", features = ["clang_10_0"] }
 ignore = "0.4.20"
 regex = "1.7.3"
+rustop = "1.1.2"

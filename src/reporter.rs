@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 
-
 struct Report {
     pub path: PathBuf,
     pub line: Option<u32>,
@@ -8,12 +7,16 @@ struct Report {
 }
 
 pub struct Reporter {
+    pub advanced_rules: bool,
     reports: Vec<Report>,
 }
 
 impl Reporter {
-    pub fn new() -> Self {
-        Self { reports: Vec::new() }
+    pub fn new(advanced_rules: bool) -> Self {
+        Self {
+            advanced_rules,
+            reports: Vec::new(),
+        }
     }
 
     pub fn report(&mut self, path: PathBuf, line: Option<u32>, message: &str) {
